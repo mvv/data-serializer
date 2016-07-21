@@ -230,6 +230,10 @@ instance Parsing BinaryDeserializer where
                       Right _ → return ()
   {-# INLINABLE notFollowedBy #-}
 
+instance LookAheadParsing BinaryDeserializer where
+  lookAhead = BinaryDeserializer . B.lookAhead . binaryDeserializer
+  {-# INLINE lookAhead #-}
+
 instance Deserializer BinaryDeserializer where
   word8 = BinaryDeserializer B.getWord8
   {-# INLINE word8 #-}
@@ -294,6 +298,10 @@ instance Parsing CerealDeserializer where
                       Left e  → fail (show e)
                       Right _ → return ()
   {-# INLINABLE notFollowedBy #-}
+
+instance LookAheadParsing CerealDeserializer where
+  lookAhead = CerealDeserializer . S.lookAhead . cerealDeserializer
+  {-# INLINE lookAhead #-}
 
 instance Deserializer CerealDeserializer where
   word8 = CerealDeserializer S.getWord8
@@ -500,7 +508,7 @@ label = flip (<?>)
 newtype LittleEndianDeserializer μ α =
           LittleEndianDeserializer { deserializeL ∷ μ α }
           deriving (Typeable, Data, Functor, Applicative, Alternative, Monad,
-                    Parsing)
+                    Parsing, LookAheadParsing)
 
 instance Deserializer μ ⇒ Deserializer (LittleEndianDeserializer μ) where
   endian _ = LittleEndian
@@ -550,7 +558,7 @@ instance Deserializer μ ⇒ Deserializer (LittleEndianDeserializer μ) where
 newtype BigEndianDeserializer μ α =
           BigEndianDeserializer { deserializeB ∷ μ α }
           deriving (Typeable, Data, Functor, Applicative, Alternative, Monad,
-                    Parsing)
+                    Parsing, LookAheadParsing)
 
 instance Deserializer μ ⇒ Deserializer (BigEndianDeserializer μ) where
   endian _ = BigEndian
