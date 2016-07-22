@@ -76,6 +76,7 @@ import Text.Parser.Combinators
 import Text.Parser.LookAhead
 import Control.Applicative (Applicative(..), Alternative,
                             (<$>), (<$), (<*>), (*>), (<|>))
+import Control.Monad (unless)
 
 -- | Deserialization monad.
 class (Monad μ, Parsing μ) ⇒ Deserializer μ where
@@ -688,6 +689,16 @@ instance (Deserializable α, Deserializable β)
              0 → Left <$> get
              1 → Right <$> get
              _ → unexpected (show w)
+
+instance Deserializable BS.ByteString where
+  get = do l ← int <?> "length"
+           unless (l >= 0) $ unexpected "negative length"
+           take l <?> "contents"
+  {-# INLINABLE get #-}
+
+instance Deserializable SBS.ShortByteString where
+  get = SBS.toShort <$> get
+  {-# INLINE get #-}
 
 -- | Deserialize a value using the provided default byte order.
 getIn ∷ (Deserializer μ, Deserializable α) ⇒ Endian → μ α
