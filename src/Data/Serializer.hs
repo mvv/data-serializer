@@ -197,14 +197,6 @@ instance Serializer B.Put where
   builder = B.putBuilder
   {-# INLINE builder #-}
 
-#if !MIN_VERSION_cereal(0,5,3)
-instance Monoid S.Put where
-  mempty = return ()
-  {-# INLINE mempty #-}
-  mappend = (>>)
-  {-# INLINE mappend #-}
-#endif
-
 instance Serializer S.Put where
   word8 = S.putWord8
   {-# INLINE word8 #-}
