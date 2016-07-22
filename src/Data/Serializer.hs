@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -51,6 +52,7 @@ module Data.Serializer
   , RestSerializable(..)
   ) where
 
+import GHC.Generics (Generic)
 import Data.Typeable (Typeable)
 import Data.Data (Data)
 import Data.Proxy (Proxy(..))
@@ -406,7 +408,7 @@ intH = word64H . fromIntegral
 
 -- | Serializer wrapper with little endian default byte order.
 newtype LittleEndianSerializer s = LittleEndianSerializer { serializeL ∷ s }
-                                   deriving (Typeable, Data, Monoid)
+                                   deriving (Typeable, Data, Generic, Monoid)
 
 instance Serializer s ⇒ Serializer (LittleEndianSerializer s) where
   endian _ = LittleEndian
@@ -442,7 +444,7 @@ instance Serializer s ⇒ Serializer (LittleEndianSerializer s) where
 
 -- | Serializer wrapper with big endian default byte order.
 newtype BigEndianSerializer s = BigEndianSerializer { serializeB ∷ s }
-                                deriving (Typeable, Data, Monoid)
+                                deriving (Typeable, Data, Generic, Monoid)
 
 instance Serializer s ⇒ Serializer (BigEndianSerializer s) where
   endian _ = BigEndian

@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE Rank2Types #-}
@@ -57,6 +58,7 @@ module Data.Deserializer
   ) where
 
 import Prelude hiding (take)
+import GHC.Generics (Generic)
 import Data.Typeable (Typeable)
 import Data.Data (Data)
 import Data.Proxy (Proxy(..))
@@ -207,7 +209,8 @@ class (Monad μ, Parsing μ) ⇒ Deserializer μ where
 -- | A wrapper around the 'B.Get' monad (to avoid orphan instances).
 newtype BinaryDeserializer α =
           BinaryDeserializer { binaryDeserializer ∷ B.Get α }
-          deriving (Typeable, Functor, Applicative, Alternative, Monad)
+          deriving (Typeable, Generic, Functor, Applicative,
+                    Alternative, Monad)
 
 instance Parsing BinaryDeserializer where
   try p = p
@@ -275,7 +278,8 @@ instance Deserializer BinaryDeserializer where
 -- | A wrapper around the 'S.Get' monad (to avoid orphan instances).
 newtype CerealDeserializer α =
           CerealDeserializer { cerealDeserializer ∷ S.Get α }
-          deriving (Typeable, Functor, Applicative, Alternative, Monad)
+          deriving (Typeable, Generic,  Functor, Applicative,
+                    Alternative, Monad)
 
 instance Parsing CerealDeserializer where
   try p = p
@@ -508,8 +512,8 @@ label = flip (<?>)
 -- | Deserializer wrapper with little endian default byte order.
 newtype LittleEndianDeserializer μ α =
           LittleEndianDeserializer { deserializeL ∷ μ α }
-          deriving (Typeable, Data, Functor, Applicative, Alternative, Monad,
-                    Parsing, LookAheadParsing)
+          deriving (Typeable, Data, Generic, Functor, Applicative,
+                    Alternative, Monad, Parsing, LookAheadParsing)
 
 instance Deserializer μ ⇒ Deserializer (LittleEndianDeserializer μ) where
   endian _ = LittleEndian
@@ -558,8 +562,8 @@ instance Deserializer μ ⇒ Deserializer (LittleEndianDeserializer μ) where
 -- | Deserializer wrapper with big endian default byte order.
 newtype BigEndianDeserializer μ α =
           BigEndianDeserializer { deserializeB ∷ μ α }
-          deriving (Typeable, Data, Functor, Applicative, Alternative, Monad,
-                    Parsing, LookAheadParsing)
+          deriving (Typeable, Data, Generic, Functor, Applicative,
+                    Alternative, Monad, Parsing, LookAheadParsing)
 
 instance Deserializer μ ⇒ Deserializer (BigEndianDeserializer μ) where
   endian _ = BigEndian
