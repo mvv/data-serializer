@@ -29,13 +29,12 @@ Source-Repository head
 
 Library
   Default-Language: Haskell2010
-  Build-Depends: base >= 4.6 && < 5
-               , bytestring >= 0.10.2
-               , binary >= 0.7
+  Build-Depends: base >= 4.7 && < 5
+               , bytestring >= 0.10.4
+               , binary >= 0.7.2
                , cereal >= 0.5
                , data-endian >= 0.1.1
                , parsers >= 0.12.3
-               , attoparsec >= 0.12.1.4
   Hs-Source-Dirs: src
   GHC-Options: -Wall
   Exposed-Modules:
