@@ -223,8 +223,7 @@ instance Semigroup BinarySerializer where
 instance Monoid BinarySerializer where
   mempty = BinarySerializer $ return ()
   {-# INLINE mempty #-}
-  mappend s₁ s₂ = BinarySerializer
-                $ binarySerializer s₁ >> binarySerializer s₂
+  mappend = (<>)
   {-# INLINE mappend #-}
 #endif
 
@@ -264,18 +263,15 @@ newtype CerealSerializer = CerealSerializer { cerealSerializer ∷ S.Put }
 #endif
                                     )
 
-#if MIN_VERSION_base(4,9,0)
 instance Semigroup CerealSerializer where
-  (<>) s₁ s₂ = CerealSerializer $ cerealSerializer s₁ >> cerealSerializer s₂
+  s₁ <> s₂ = CerealSerializer $ cerealSerializer s₁ >> cerealSerializer s₂
   {-# INLINE (<>) #-}
-#endif
 
 #if !MIN_VERSION_cereal(0,5,3)
 instance Monoid CerealSerializer where
   mempty = CerealSerializer $ return ()
   {-# INLINE mempty #-}
-  mappend s₁ s₂ = CerealSerializer
-                $ cerealSerializer s₁ >> cerealSerializer s₂
+  mappend = (<>)
   {-# INLINE mappend #-}
 #endif
 
