@@ -190,8 +190,10 @@ instance Serializer B.Put where
   {-# INLINE word64B #-}
   byteString = B.putByteString
   {-# INLINE byteString #-}
+#if MIN_VERSION_binary(0,8,1)
   shortByteString = B.putShortByteString
   {-# INLINE shortByteString #-}
+#endif
   lazyByteString = B.putLazyByteString
   {-# INLINE lazyByteString #-}
   builder = B.putBuilder
