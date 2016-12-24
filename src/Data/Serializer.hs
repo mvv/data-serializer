@@ -196,8 +196,10 @@ instance Serializer B.Put where
 #endif
   lazyByteString = B.putLazyByteString
   {-# INLINE lazyByteString #-}
+#if MIN_VERSION_binary(0,8,3)
   builder = B.putBuilder
   {-# INLINE builder #-}
+#endif
 
 instance Serializer S.Put where
   word8 = S.putWord8
