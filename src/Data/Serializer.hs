@@ -12,6 +12,8 @@ module Data.Serializer
   (
   -- * Serialization monoid
     Serializer(..)
+  , BinarySerializer(..)
+  , CerealSerializer(..)
   -- ** Binary words serialization
   , word16H
   , word32H
@@ -56,7 +58,8 @@ import GHC.Generics (Generic)
 import Data.Typeable (Typeable)
 import Data.Data (Data)
 import Data.Proxy (Proxy(..))
-import Data.Monoid (Monoid, (<>))
+import Data.Semigroup (Semigroup, (<>))
+import Data.Monoid (Monoid)
 import Data.Endian (Endian(..), swapEndian)
 import Data.Word
 import Data.Int
@@ -69,7 +72,7 @@ import qualified Data.Binary.Put as B
 import qualified Data.Serialize.Put as S
 
 -- | Serialization monoid.
-class Monoid s ⇒ Serializer s where
+class (Semigroup s, Monoid s) ⇒ Serializer s where
   {-# MINIMAL word8 #-}
   -- | Default byte order of the serializer.
   endian ∷ Proxy s → Endian
@@ -173,6 +176,7 @@ instance Serializer BB.Builder where
   builder = id
   {-# INLINE builder #-}
 
+#if MIN_VERSION_binary(0,8,3)
 instance Serializer B.Put where
   word8 = B.putWord8
   {-# INLINE word8 #-}
@@ -190,40 +194,120 @@ instance Serializer B.Put where
   {-# INLINE word64B #-}
   byteString = B.putByteString
   {-# INLINE byteString #-}
-#if MIN_VERSION_binary(0,8,1)
   shortByteString = B.putShortByteString
   {-# INLINE shortByteString #-}
-#endif
   lazyByteString = B.putLazyByteString
   {-# INLINE lazyByteString #-}
-#if MIN_VERSION_binary(0,8,3)
   builder = B.putBuilder
   {-# INLINE builder #-}
 #endif
 
-instance Serializer S.Put where
-  word8 = S.putWord8
+-- | A wrapper around the 'B.Put' monoid (to avoid orphan instances).
+newtype BinarySerializer = BinarySerializer { runBinarySerializer ∷ B.Put }
+                           deriving ( Typeable, Generic
+#if MIN_VERSION_binary(0,8,3)
+# if MIN_VERSION_base(4,9,0)
+                                    , Semigroup
+# endif
+                                    , Monoid
+#endif
+                                    )
+
+#if !MIN_VERSION_base(4,9,0) || !MIN_VERSION_binary(0,8,3)
+instance Semigroup BinarySerializer where
+  s₁ <> s₂ = BinarySerializer
+           $ runBinarySerializer s₁ >> runBinarySerializer s₂
+  {-# INLINE (<>) #-}
+#endif
+
+#if !MIN_VERSION_binary(0,8,3)
+instance Monoid BinarySerializer where
+  mempty = BinarySerializer $ return ()
+  {-# INLINE mempty #-}
+  mappend s₁ s₂ = BinarySerializer
+                $ runBinarySerializer s₁ >> runBinarySerializer s₂
+  {-# INLINE mappend #-}
+#endif
+
+instance Serializer BinarySerializer where
+  word8 = BinarySerializer . B.putWord8
   {-# INLINE word8 #-}
-  word16L = S.putWord16le
+  word16L = BinarySerializer . B.putWord16le
   {-# INLINE word16L #-}
-  word16B = S.putWord16be
+  word16B = BinarySerializer . B.putWord16be
   {-# INLINE word16B #-}
-  word32L = S.putWord32le
+  word32L = BinarySerializer . B.putWord32le
   {-# INLINE word32L #-}
-  word32B = S.putWord32be
+  word32B = BinarySerializer . B.putWord32be
   {-# INLINE word32B #-}
-  word64L = S.putWord64le
+  word64L = BinarySerializer . B.putWord64le
   {-# INLINE word64L #-}
-  word64B = S.putWord64be
+  word64B = BinarySerializer . B.putWord64be
   {-# INLINE word64B #-}
-  byteString = S.putByteString
+  byteString = BinarySerializer . B.putByteString
   {-# INLINE byteString #-}
-  shortByteString = S.putShortByteString
+#if MIN_VERSION_binary(0,8,1)
+  shortByteString = BinarySerializer . B.putShortByteString
   {-# INLINE shortByteString #-}
-  lazyByteString = S.putLazyByteString
+#endif
+  lazyByteString = BinarySerializer . B.putLazyByteString
   {-# INLINE lazyByteString #-}
-  builder = S.putBuilder
+#if MIN_VERSION_binary(0,8,3)
+  builder = BinarySerializer . B.putBuilder
   {-# INLINE builder #-}
+#endif
+
+-- | A wrapper around the 'S.Put' monoid (to avoid orphan instances).
+newtype CerealSerializer = CerealSerializer { runCerealSerializer ∷ S.Put }
+                           deriving ( Typeable, Generic
+#if MIN_VERSION_cereal(0,5,3)
+                                    , Monoid
+#endif
+                                    )
+
+#if MIN_VERSION_base(4,9,0)
+instance Semigroup CerealSerializer where
+  (<>) s₁ s₂ = CerealSerializer
+           $ runCerealSerializer s₁ >> runCerealSerializer s₂
+  {-# INLINE (<>) #-}
+#endif
+
+#if !MIN_VERSION_cereal(0,5,3)
+instance Monoid CerealSerializer where
+  mempty = CerealSerializer $ return ()
+  {-# INLINE mempty #-}
+  mappend s₁ s₂ = CerealSerializer
+                $ runCerealSerializer s₁ >> runCerealSerializer s₂
+  {-# INLINE mappend #-}
+#endif
+
+instance Serializer CerealSerializer where
+  word8 = CerealSerializer . S.putWord8
+  {-# INLINE word8 #-}
+  word16L = CerealSerializer . S.putWord16le
+  {-# INLINE word16L #-}
+  word16B = CerealSerializer . S.putWord16be
+  {-# INLINE word16B #-}
+  word32L = CerealSerializer . S.putWord32le
+  {-# INLINE word32L #-}
+  word32B = CerealSerializer . S.putWord32be
+  {-# INLINE word32B #-}
+  word64L = CerealSerializer . S.putWord64le
+  {-# INLINE word64L #-}
+  word64B = CerealSerializer . S.putWord64be
+  {-# INLINE word64B #-}
+  byteString = CerealSerializer . S.putByteString
+  {-# INLINE byteString #-}
+#if MIN_VERSION_cereal(0,5,0)
+  shortByteString = CerealSerializer . S.putShortByteString
+  {-# INLINE shortByteString #-}
+#endif
+  lazyByteString = CerealSerializer . S.putLazyByteString
+  {-# INLINE lazyByteString #-}
+#if MIN_VERSION_cereal(0,5,0)
+  builder = CerealSerializer . S.putBuilder
+  {-# INLINE builder #-}
+#endif
 
 -- | Serialize an usigned 16-bit integer in host byte order.
 word16H ∷ Serializer s ⇒ Word16 → s
@@ -404,7 +488,8 @@ intH = word64H . fromIntegral
 
 -- | Serializer wrapper with little endian default byte order.
 newtype LittleEndianSerializer s = LittleEndianSerializer { serializeL ∷ s }
-                                   deriving (Typeable, Data, Generic, Monoid)
+                                   deriving (Typeable, Data, Generic,
+                                             Semigroup, Monoid)
 
 instance Serializer s ⇒ Serializer (LittleEndianSerializer s) where
   endian _ = LittleEndian
@@ -440,7 +525,8 @@ instance Serializer s ⇒ Serializer (LittleEndianSerializer s) where
 
 -- | Serializer wrapper with big endian default byte order.
 newtype BigEndianSerializer s = BigEndianSerializer { serializeB ∷ s }
-                                deriving (Typeable, Data, Generic, Monoid)
+                                deriving (Typeable, Data, Generic,
+                                          Semigroup, Monoid)
 
 instance Serializer s ⇒ Serializer (BigEndianSerializer s) where
   endian _ = BigEndian
