@@ -23,8 +23,8 @@ import qualified Data.Deserializer as D
 import Control.Applicative ((<|>))
 
 byteStringBuilder = LBS.unpack . BB.toLazyByteString
-binaryBuilder = LBS.unpack . B.runPut
-cerealBuilder = LBS.unpack . C.runPutLazy
+binaryBuilder = LBS.unpack . B.runPut . S.binarySerializer
+cerealBuilder = LBS.unpack . C.runPutLazy . S.cerealSerializer
 
 serializerTests ∷ Serializer s ⇒ String → (s → [Word8]) → TestTree
 serializerTests name build =

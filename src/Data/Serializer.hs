@@ -176,7 +176,7 @@ instance Serializer BB.Builder where
   builder = id
   {-# INLINE builder #-}
 
-#if MIN_VERSION_binary(0,8,3)
+#if MIN_VERSION_base(4,9,0) && MIN_VERSION_binary(0,8,3)
 instance Serializer B.Put where
   word8 = B.putWord8
   {-# INLINE word8 #-}
@@ -203,7 +203,7 @@ instance Serializer B.Put where
 #endif
 
 -- | A wrapper around the 'B.Put' monoid (to avoid orphan instances).
-newtype BinarySerializer = BinarySerializer { runBinarySerializer ∷ B.Put }
+newtype BinarySerializer = BinarySerializer { binarySerializer ∷ B.Put }
                            deriving ( Typeable, Generic
 #if MIN_VERSION_binary(0,8,3)
 # if MIN_VERSION_base(4,9,0)
@@ -215,8 +215,7 @@ newtype BinarySerializer = BinarySerializer { runBinarySerializer ∷ B.Put }
 
 #if !MIN_VERSION_base(4,9,0) || !MIN_VERSION_binary(0,8,3)
 instance Semigroup BinarySerializer where
-  s₁ <> s₂ = BinarySerializer
-           $ runBinarySerializer s₁ >> runBinarySerializer s₂
+  s₁ <> s₂ = BinarySerializer $ binarySerializer s₁ >> binarySerializer s₂
   {-# INLINE (<>) #-}
 #endif
 
@@ -225,7 +224,7 @@ instance Monoid BinarySerializer where
   mempty = BinarySerializer $ return ()
   {-# INLINE mempty #-}
   mappend s₁ s₂ = BinarySerializer
-                $ runBinarySerializer s₁ >> runBinarySerializer s₂
+                $ binarySerializer s₁ >> binarySerializer s₂
   {-# INLINE mappend #-}
 #endif
 
@@ -258,7 +257,7 @@ instance Serializer BinarySerializer where
 #endif
 
 -- | A wrapper around the 'S.Put' monoid (to avoid orphan instances).
-newtype CerealSerializer = CerealSerializer { runCerealSerializer ∷ S.Put }
+newtype CerealSerializer = CerealSerializer { cerealSerializer ∷ S.Put }
                            deriving ( Typeable, Generic
 #if MIN_VERSION_cereal(0,5,3)
                                     , Monoid
@@ -267,8 +266,7 @@ newtype CerealSerializer = CerealSerializer { runCerealSerializer ∷ S.Put }
 
 #if MIN_VERSION_base(4,9,0)
 instance Semigroup CerealSerializer where
-  (<>) s₁ s₂ = CerealSerializer
-           $ runCerealSerializer s₁ >> runCerealSerializer s₂
+  (<>) s₁ s₂ = CerealSerializer $ cerealSerializer s₁ >> cerealSerializer s₂
   {-# INLINE (<>) #-}
 #endif
 
@@ -277,7 +275,7 @@ instance Monoid CerealSerializer where
   mempty = CerealSerializer $ return ()
   {-# INLINE mempty #-}
   mappend s₁ s₂ = CerealSerializer
-                $ runCerealSerializer s₁ >> runCerealSerializer s₂
+                $ cerealSerializer s₁ >> cerealSerializer s₂
   {-# INLINE mappend #-}
 #endif
 
