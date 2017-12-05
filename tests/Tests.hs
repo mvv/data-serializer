@@ -11,7 +11,6 @@ import Data.Word (Word8, Word32)
 import Data.Either (isLeft, isRight)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString.Builder as BB
 import qualified Data.Binary.Put as B
 import qualified Data.Binary.Get as B
 import qualified Data.Serialize.Put as C
@@ -22,7 +21,6 @@ import Data.Deserializer (Deserializer)
 import qualified Data.Deserializer as D
 import Control.Applicative ((<|>))
 
-byteStringBuilder = LBS.unpack . BB.toLazyByteString
 binaryBuilder = LBS.unpack . B.runPut . S.binarySerializer
 cerealBuilder = LBS.unpack . C.runPutLazy . S.cerealSerializer
 
@@ -69,7 +67,7 @@ deserializerTests name parse =
 main = defaultMain
      $ testGroup "Tests"
          [ testGroup "Serializers"
-             [ serializerTests "Builder" byteStringBuilder
+             [ serializerTests "Builder" S.buildBytes
              , serializerTests "Binary.Put" binaryBuilder
              , serializerTests "Cereal.Put" cerealBuilder
              ]

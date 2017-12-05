@@ -48,12 +48,30 @@ module Data.Deserializer
   , BigEndianDeserializer(..)
   , deserializeIn
   , deserializeH
+  -- ** Default deserializer
+  , Deserialized(..)
+  , isDeserialized
+  , isMalformed
+  , maybeDeserialized
+  , defaultDeserializer
   -- * Deserializable types
   , Deserializable(..)
   , getIn
   , getL
   , getB
   , getH
+  , deserializeBytes
+  , deserializeBytesAs
+  , deserializeByteString
+  , deserializeByteStringAs
+  , deserializeLazyByteString
+  , deserializeLazyByteStringAs
+  , fromBytes
+  , fromBytesAs
+  , fromByteString
+  , fromByteStringAs
+  , fromLazyByteString
+  , fromLazyByteStringAs
   , RestDeserializable(..)
   ) where
 
@@ -74,6 +92,7 @@ import qualified Data.ByteString.Builder as BB
 import qualified Data.Binary.Get as B
 import qualified Data.Binary.Get.Internal as B
 import qualified Data.Serialize.Get as S
+import Data.List.Split (splitOn)
 import Text.Parser.Combinators
 import Text.Parser.LookAhead
 import Control.Applicative (Applicative(..), Alternative,
@@ -624,6 +643,36 @@ deserializeH = deserializeB
 deserializeH = deserializeL
 #endif
 
+-- | Deserialization result.
+data Deserialized α = Deserialized α
+                    | Malformed [String] String
+
+-- | Map 'Deserialized' to 'True' and 'Malformed' to 'False'.
+isDeserialized ∷ Deserialized α → Bool
+isDeserialized (Deserialized _) = True
+isDeserialized (Malformed _ _)  = False
+
+-- | Map 'Deserialized' to 'False' and 'Malformed' to 'True'.
+isMalformed ∷ Deserialized α → Bool
+isMalformed (Deserialized _) = False
+isMalformed (Malformed _ _)  = True
+
+-- | Map 'Deserialized' values to 'Just' and 'Malformed' to 'Nothing'.
+maybeDeserialized ∷ Deserialized α → Maybe α
+maybeDeserialized (Deserialized a) = Just a
+maybeDeserialized (Malformed _ _)  = Nothing
+
+-- | Deserialize a 'LBS.ByteString' via the default deserializer.
+defaultDeserializer ∷ (∀ μ . Deserializer μ ⇒ μ α) → LBS.ByteString
+                    → Deserialized α
+defaultDeserializer m i = case B.runGetOrFail (binaryDeserializer m) i of
+  Left (_, _, e) → case splitOn "\n" e of
+    []  → Malformed [] e
+    [_] → Malformed [] e
+    es  → Malformed (init es) (last es)
+  Right (_, _, a) →
+    Deserialized a
+
 -- | Deserializable type. 'get' must not rely on 'eof'.
 class Deserializable α where
   get ∷ Deserializer μ ⇒ μ α
@@ -727,6 +776,74 @@ getH = getB
 getH = getL
 #endif
 {-# INLINE getH #-}
+
+-- | Deserialize a value of type @α@ from a list of bytes via
+-- the 'defaultDeserializer'.
+deserializeBytes ∷ Deserializable α ⇒ [Word8] → Deserialized α
+deserializeBytes = defaultDeserializer get . LBS.pack
+{-# INLINE deserializeBytes #-}
+
+-- | Provide a hint for the type system when using 'deserializeBytes'.
+deserializeBytesAs ∷ Deserializable α ⇒ p α → [Word8] → Deserialized α
+deserializeBytesAs _ = deserializeBytes
+{-# INLINE deserializeBytesAs #-}
+
+-- | Deserialize a value of type @α@ from a 'BS.ByteString' via
+-- the 'defaultDeserializer'.
+deserializeByteString ∷ Deserializable α
+                      ⇒ BS.ByteString → Deserialized α
+deserializeByteString = defaultDeserializer get . LBS.fromStrict
+{-# INLINE deserializeByteString #-}
+
+-- | Provide a hint for the type system when using 'deserializeByteString'.
+deserializeByteStringAs ∷ Deserializable α
+                        ⇒ p α → BS.ByteString → Deserialized α
+deserializeByteStringAs _ = deserializeByteString
+{-# INLINE deserializeByteStringAs #-}
+
+-- | Deserialize a value of type @α@ from a 'LBS.ByteString' via
+-- the 'defaultDeserializer'.
+deserializeLazyByteString ∷ Deserializable α
+                          ⇒ LBS.ByteString → Deserialized α
+deserializeLazyByteString = defaultDeserializer get
+{-# INLINE deserializeLazyByteString #-}
+
+-- | Provide a hint for the type system when using
+-- 'deserializeLazyByteString'.
+deserializeLazyByteStringAs ∷ Deserializable α
+                            ⇒ p α → LBS.ByteString → Deserialized α
+deserializeLazyByteStringAs _ = deserializeLazyByteString
+{-# INLINE deserializeLazyByteStringAs #-}
+
+-- | A shorthand for @'maybeDeserialized' . 'deserializeBytes'@.
+fromBytes ∷ Deserializable α ⇒ [Word8] → Maybe α
+fromBytes = maybeDeserialized . deserializeBytes
+{-# INLINE fromBytes #-}
+
+-- | Provide a hint for the type system when using 'fromBytes'
+fromBytesAs ∷ Deserializable α ⇒ p α → [Word8] → Maybe α
+fromBytesAs _ = fromBytes
+{-# INLINE fromBytesAs #-}
+
+-- | A shorthand for @'maybeDeserialized' . 'deserializeByteString'@.
+fromByteString ∷ Deserializable α ⇒ BS.ByteString → Maybe α
+fromByteString = maybeDeserialized . deserializeByteString
+{-# INLINE fromByteString #-}
+
+-- | Provide a hint for the type system when using 'fromByteString'
+fromByteStringAs ∷ Deserializable α ⇒ p α → BS.ByteString → Maybe α
+fromByteStringAs _ = fromByteString
+{-# INLINE fromByteStringAs #-}
+
+-- | A shorthand for @'maybeDeserialized' . 'deserializeLazyByteString'@.
+fromLazyByteString ∷ Deserializable α ⇒ LBS.ByteString → Maybe α
+fromLazyByteString = maybeDeserialized . deserializeLazyByteString
+{-# INLINE fromLazyByteString #-}
+
+-- | Provide a hint for the type system when using 'fromLazyByteString'
+fromLazyByteStringAs ∷ Deserializable α ⇒ p α → LBS.ByteString → Maybe α
+fromLazyByteStringAs _ = fromLazyByteString
+{-# INLINE fromLazyByteStringAs #-}
 
 -- | Deserializable type. 'getRest' must consume all the remaining input
 --   or fail.

@@ -38,6 +38,7 @@ Library
                , cereal >= 0.4.1
                , data-endian >= 0.1.1
                , parsers >= 0.12.3
+               , split >= 0.2
   Hs-Source-Dirs: src
   GHC-Options: -Wall
   Exposed-Modules:

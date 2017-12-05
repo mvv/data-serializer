@@ -12,6 +12,9 @@ module Data.Serializer
   (
   -- * Serialization monoid
     Serializer(..)
+  , buildBytes
+  , buildByteString
+  , buildLazyByteString
   , BinarySerializer(..)
   , CerealSerializer(..)
   -- ** Binary words serialization
@@ -50,6 +53,8 @@ module Data.Serializer
   , putL
   , putB
   , putH
+  , toByteString
+  , toLazyByteString
   , SizedSerializable(..)
   , RestSerializable(..)
   ) where
@@ -175,6 +180,20 @@ instance Serializer BB.Builder where
   {-# INLINE lazyByteString #-}
   builder = id
   {-# INLINE builder #-}
+
+-- | A shorthand for @"LBS.unpack' . 'BB.toLazyByteString'@.
+buildBytes ∷ BB.Builder → [Word8]
+buildBytes = LBS.unpack . BB.toLazyByteString
+
+-- | A shorthand for @'LBS.toStrict' . 'BB.toLazyByteString'@.
+buildByteString ∷ BB.Builder → BS.ByteString
+buildByteString = LBS.toStrict . BB.toLazyByteString
+{-# INLINE buildByteString #-}
+
+-- | An alias for @'BB.toLazyByteString'@.
+buildLazyByteString ∷ BB.Builder → LBS.ByteString
+buildLazyByteString = BB.toLazyByteString
+{-# INLINE buildLazyByteString #-}
 
 #if MIN_VERSION_base(4,9,0) && MIN_VERSION_binary(0,8,3)
 instance Serializer B.Put where
@@ -656,6 +675,16 @@ putB a = serializeB (put a)
 putH ∷ (Serializer s, Serializable α) ⇒ α → s
 putH a = serializeH (put a)
 {-# INLINE putH #-}
+
+-- | A shorthand for @'buildByteString' . 'put'@.
+toByteString ∷ Serializable α ⇒ α → BS.ByteString
+toByteString = buildByteString . put
+{-# INLINE toByteString #-}
+
+-- | A shorthand for @'buildLazyByteString' . 'put'@.
+toLazyByteString ∷ Serializable α ⇒ α → LBS.ByteString
+toLazyByteString = BB.toLazyByteString . put
+{-# INLINE toLazyByteString #-}
 
 -- | Types with fixed serialized size.
 class Serializable α ⇒ SizedSerializable α where
