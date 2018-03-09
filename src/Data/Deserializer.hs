@@ -215,6 +215,10 @@ class (Monad μ, Parsing μ) ⇒ Deserializer μ where
   ensure_ ∷ Int → μ ()
   ensure_ = (() <$) . ensure
   {-# INLINE ensure_ #-}
+  -- | 'check' /n/ returns 'True' if the input has at least /n/ more bytes.
+  check ∷ Int → μ Bool
+  check n = True <$ ensure_ n <|> return False
+  {-# INLINE check #-}
   -- | Consume exactly the given number of bytes.
   take ∷ Int → μ BS.ByteString
   -- | Consume a portion of the input (the size of the returned
