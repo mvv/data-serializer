@@ -53,6 +53,7 @@ module Data.Serializer
   , putL
   , putB
   , putH
+  , toBytes
   , toByteString
   , toLazyByteString
   , SizedSerializable(..)
@@ -675,6 +676,11 @@ putB a = serializeB (put a)
 putH ∷ (Serializer s, Serializable α) ⇒ α → s
 putH a = serializeH (put a)
 {-# INLINE putH #-}
+
+-- | A shorthand for @'buildBytes' . 'put'@.
+toBytes ∷ Serializable α ⇒ α → [Word8]
+toBytes = buildBytes . put
+{-# INLINE toBytes #-}
 
 -- | A shorthand for @'buildByteString' . 'put'@.
 toByteString ∷ Serializable α ⇒ α → BS.ByteString
