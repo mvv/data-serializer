@@ -75,7 +75,7 @@ module Data.Deserializer
   , RestDeserializable(..)
   ) where
 
-import Prelude hiding (take)
+import Prelude hiding (fail, take)
 import GHC.Generics (Generic)
 import Data.Typeable (Typeable)
 import Data.Data (Data)
@@ -95,12 +95,12 @@ import qualified Data.Serialize.Get as S
 import Data.List.Split (splitOn)
 import Text.Parser.Combinators
 import Text.Parser.LookAhead
-import Control.Applicative (Applicative(..), Alternative,
-                            (<$>), (<$), (<*>), (*>), (<|>))
+import Control.Applicative (Alternative ((<|>)))
 import Control.Monad (unless)
+import Control.Monad.Fail (MonadFail (fail))
 
 -- | Deserialization monad.
-class (Monad μ, Parsing μ) ⇒ Deserializer μ where
+class (Monad μ, MonadFail μ, Parsing μ) ⇒ Deserializer μ where
   {-# MINIMAL ensure, take, chunk, isolate #-}
   -- | Default byte order of the deserializer.
   endian ∷ Proxy μ → Endian
@@ -233,7 +233,7 @@ class (Monad μ, Parsing μ) ⇒ Deserializer μ where
 newtype BinaryDeserializer α =
           BinaryDeserializer { binaryDeserializer ∷ B.Get α }
           deriving (Typeable, Generic, Functor, Applicative,
-                    Alternative, Monad)
+                    Alternative, Monad, MonadFail)
 
 instance Parsing BinaryDeserializer where
   try p = p
@@ -302,7 +302,7 @@ instance Deserializer BinaryDeserializer where
 newtype CerealDeserializer α =
           CerealDeserializer { cerealDeserializer ∷ S.Get α }
           deriving (Typeable, Generic,  Functor, Applicative,
-                    Alternative, Monad)
+                    Alternative, Monad, MonadFail)
 
 instance Parsing CerealDeserializer where
   try p = p
@@ -536,7 +536,7 @@ label = flip (<?>)
 newtype LittleEndianDeserializer μ α =
           LittleEndianDeserializer { deserializeL ∷ μ α }
           deriving (Typeable, Data, Generic, Functor, Applicative,
-                    Alternative, Monad, Parsing, LookAheadParsing)
+                    Alternative, Monad, MonadFail, Parsing, LookAheadParsing)
 
 instance Deserializer μ ⇒ Deserializer (LittleEndianDeserializer μ) where
   endian _ = LittleEndian
@@ -586,7 +586,7 @@ instance Deserializer μ ⇒ Deserializer (LittleEndianDeserializer μ) where
 newtype BigEndianDeserializer μ α =
           BigEndianDeserializer { deserializeB ∷ μ α }
           deriving (Typeable, Data, Generic, Functor, Applicative,
-                    Alternative, Monad, Parsing, LookAheadParsing)
+                    Alternative, Monad, MonadFail, Parsing, LookAheadParsing)
 
 instance Deserializer μ ⇒ Deserializer (BigEndianDeserializer μ) where
   endian _ = BigEndian
