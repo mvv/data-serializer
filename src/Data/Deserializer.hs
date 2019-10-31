@@ -100,7 +100,7 @@ import Control.Monad (unless)
 import Control.Monad.Fail (MonadFail (fail))
 
 -- | Deserialization monad.
-class (Monad μ, MonadFail μ, Parsing μ) ⇒ Deserializer μ where
+class (MonadFail μ, Parsing μ) ⇒ Deserializer μ where
   {-# MINIMAL ensure, take, chunk, isolate #-}
   -- | Default byte order of the deserializer.
   endian ∷ Proxy μ → Endian
