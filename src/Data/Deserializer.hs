@@ -95,8 +95,10 @@ import qualified Data.Serialize.Get as S
 import Data.List.Split (splitOn)
 import Text.Parser.Combinators
 import Text.Parser.LookAhead
-import Control.Applicative (Applicative(..), Alternative,
-                            (<$>), (<$), (<*>), (*>), (<|>))
+#if !MIN_VERSION_base(4,8,0)
+import Control.Applicative (Applicative(..), (<$>), (<$), (<*>), (*>))
+#endif
+import Control.Applicative (Alternative, (<|>))
 import Control.Monad (unless)
 
 -- | Deserialization monad.
@@ -243,7 +245,7 @@ instance Parsing BinaryDeserializer where
   skipMany p = ((True <$ p) <|> pure False) >>= \case
                  True  → skipMany p
                  False → return ()
-  unexpected = fail
+  unexpected = BinaryDeserializer . fail
   {-# INLINE unexpected #-}
   eof = BinaryDeserializer
       $ B.isEmpty >>= \case
@@ -312,7 +314,7 @@ instance Parsing CerealDeserializer where
   skipMany p = ((True <$ p) <|> pure False) >>= \case
                  True  → skipMany p
                  False → return ()
-  unexpected = fail
+  unexpected = CerealDeserializer . fail
   {-# INLINE unexpected #-}
   eof = CerealDeserializer
       $ ((False <$ S.lookAheadM (Nothing <$ S.getWord8)) <|>
