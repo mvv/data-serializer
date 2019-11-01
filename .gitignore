@@ -1,5 +1,6 @@
-cabal.sandbox.config
 dist
+dist-newstyle
 .*
 *~
 *.log
+*.local
