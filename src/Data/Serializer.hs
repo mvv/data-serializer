@@ -64,8 +64,10 @@ import GHC.Generics (Generic)
 import Data.Typeable (Typeable)
 import Data.Data (Data)
 import Data.Proxy (Proxy(..))
+#if !MIN_VERSION_base(4,13,0)
 import Data.Semigroup (Semigroup, (<>))
 import Data.Monoid (Monoid)
+#endif
 import Data.Endian (Endian(..), swapEndian)
 import Data.Word
 import Data.Int
