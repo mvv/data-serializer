@@ -637,16 +637,16 @@ instance Deserializer μ ⇒ Deserializer (BigEndianDeserializer μ) where
 -- | Force the default byte order.
 deserializeIn ∷ Deserializer μ
               ⇒ Endian → (∀ μ' . (Deserializer μ') ⇒ μ' α) → μ α
-deserializeIn LittleEndian = deserializeL
-deserializeIn BigEndian    = deserializeB
+deserializeIn LittleEndian d = deserializeL d
+deserializeIn BigEndian    d = deserializeB d
 {-# INLINE deserializeIn #-}
 
 -- | Force the default byte order to be the host byte order.
 deserializeH ∷ Deserializer μ ⇒ (∀ μ' . (Deserializer μ') ⇒ μ' α) → μ α
 #ifdef WORDS_BIGENDIAN
-deserializeH = deserializeB
+deserializeH d = deserializeB d
 #else
-deserializeH = deserializeL
+deserializeH d = deserializeL d
 #endif
 
 -- | Deserialization result.
