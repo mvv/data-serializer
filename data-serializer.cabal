@@ -33,13 +33,14 @@ Source-Repository head
 Library
   Default-Language: Haskell2010
   Build-Depends: base >= 4.8 && < 5
-               , semigroups >= 0.18.2
                , bytestring >= 0.10.4
                , binary >= 0.7.2
                , cereal >= 0.4.1
                , data-endian >= 0.1.1
                , parsers >= 0.12.3
                , split >= 0.2
+  if impl(ghc < 8.0)
+    Build-Depends: semigroups >= 0.18.2
   Hs-Source-Dirs: src
   GHC-Options: -Wall
   Exposed-Modules:
