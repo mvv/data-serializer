@@ -578,16 +578,16 @@ instance Serializer s ⇒ Serializer (BigEndianSerializer s) where
 
 -- | Force the default byte order.
 serializeIn ∷ Serializer s ⇒ Endian → (∀ s' . (Serializer s') ⇒ s') → s
-serializeIn LittleEndian e = serializeL e
-serializeIn BigEndian    e = serializeB e
+serializeIn LittleEndian s = serializeL s
+serializeIn BigEndian    s = serializeB s
 {-# INLINE serializeIn #-}
 
 -- | Force the default byte order to be the host byte order.
 serializeH ∷ Serializer s ⇒ (∀ s' . (Serializer s') ⇒ s') → s
 #ifdef WORDS_BIGENDIAN
-serializeH e = serializeB e
+serializeH s = serializeB s
 #else
-serializeH e = serializeL e
+serializeH s = serializeL s
 #endif
 {-# INLINE serializeH #-}
 

@@ -648,6 +648,7 @@ deserializeH d = deserializeB d
 #else
 deserializeH d = deserializeL d
 #endif
+{-# INLINE deserializeH #-}
 
 -- | Deserialization result.
 data Deserialized α = Deserialized α
